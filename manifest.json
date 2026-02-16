@@ -1,0 +1,17 @@
+{
+  "name": "Трекер заробітку SIM",
+  "short_name": "SIM TRACKER",
+  "description": "Трекер заробітку",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ff2d55",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

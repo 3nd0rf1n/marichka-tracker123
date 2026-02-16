@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="uk" class="theme-dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Марічка SIM</title>
+    
+    <style>
+        .theme-light {
+            --color-primary: #ff2d55;
+            --color-secondary: #f2f2f7;
+            --color-card: #ffffff;
+            --font-color: #000000;
+            --input-bg: rgba(120, 120, 128, 0.12);
+            --notify-bg: rgba(255, 255, 255, 0.9);
+        }
+        .theme-dark {
+            --color-primary: #ff2d55;
+            --color-secondary: #000000;
+            --color-card: #1c1c1e;
+            --font-color: #ffffff;
+            --input-bg: #2c2c2e;
+            --notify-bg: rgba(44, 44, 46, 0.95);
+        }
+
+        :root { touch-action: manipulation; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--color-secondary);
+            color: var(--font-color);
+            transition: background-color 0.4s;
+            overflow: hidden;
+        }
+
+        /* NOTIFICATIONS */
+        #notification-container {
+            position: fixed; top: env(safe-area-inset-top, 20px); left: 50%;
+            transform: translateX(-50%) translateY(-150%); width: 90%;
+            max-width: 350px; z-index: 9999;
+            transition: transform 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+        }
+        .notify {
+            background: var(--notify-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 16px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* MODAL CONFIRM */
+        #custom-confirm {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none;
+            align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px);
+        }
+        .confirm-box { background: var(--notify-bg); width: 270px; border-radius: 14px; text-align: center; overflow: hidden; }
+        .confirm-text { padding: 20px; font-weight: 600; font-size: 17px; }
+        .confirm-btns { display: flex; border-top: 1px solid rgba(120,120,128,0.2); }
+        .confirm-btns button { background: none; border: none; padding: 12px; flex: 1; font-size: 17px; color: var(--color-primary); }
+
+        /* UI ELEMENTS */
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: inherit; padding: 20px; }
+        .glass-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 35px 25px; border-radius: 35px; width: 100%; max-width: 320px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .theme-light .glass-card { background: rgba(255, 255, 255, 0.8); border: none; }
+        
+        input, select, button { width: 100%; padding: 16px; margin: 10px 0; border: none; border-radius: 16px; background: var(--input-bg); font-size: 17px; color: var(--font-color); outline: none; }
+        button { background: var(--color-primary); color: white; font-weight: 600; }
+        
+        /* SWITCH */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3c; transition: 0.4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background: white url('https://i.ibb.co/FxzBYR9/night.png') no-repeat center; background-size: 16px; transition: 0.4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2196f3; }
+        input:checked + .slider:before { transform: translateX(26px); background: white url('https://i.ibb.co/7JfqXxB/sunny.png') no-repeat center; background-size: 16px; }
+
+        #app { display: none; padding: calc(60px + env(safe-area-inset-top)) 20px 40px; height: 100vh; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .card { background: var(--color-card); border-radius: 25px; padding: 22px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--color-card); padding: 15px; border-radius: 22px; }
+        .stat-val { font-size: 20px; font-weight: 800; color: var(--color-primary); }
+        .stat-label { font-size: 11px; color: #8e8e93; }
+        .record-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(120,120,128,0.2); }
+
+        #loaderScreen { display: none; z-index: 2000; background: #000; color: white; }
+        .heart { font-size: 60px; animation: beat 1s infinite; }
+        @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    </style>
+</head>
+<body>
+
+    <script>
+        (function() {
+            const t = localStorage.getItem('theme') || 'theme-dark';
+            document.documentElement.className = t;
+        })();
+    </script>
+
+    <div id="notification-container"><div class="notify"><span id="notify-icon">🌸</span><span id="notify-text"></span></div></div>
+
+    <div id="custom-confirm">
+        <div class="confirm-box">
+            <div class="confirm-text">Видалити історію?</div>
+            <div class="confirm-btns"><button onclick="closeConfirm(false)">Ні</button><button onclick="closeConfirm(true)">Так</button></div>
+        </div>
+    </div>
+
+    <div id="loginScreen" class="screen">
+        <div class="glass-card">
+            <h2 id="loginTitle">Привіт, Марічко! ❤️</h2>
+            <input type="password" id="passwordInput" placeholder="Введіть пароль">
+            <label style="font-size:14px;"><input type="checkbox" id="rememberMe"> Запам'ятати мене</label>
+            <button id="loginBtn">Увійти</button>
+        </div>
+    </div>
+
+    <div id="loaderScreen" class="screen"><div class="heart">❤️</div><div style="margin-top:20px; letter-spacing:2px; font-size:10px;">РАХУЄМО ПРИБУТОК...</div></div>
+
+    <div id="app">
+        <div class="header"><h1>Фінанси</h1><label class="switch"><input type="checkbox" id="themeSlider" onchange="toggleTheme()"><span class="slider"></span></label></div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-val" id="statTotal">0 ₴</div><div class="stat-label">ВСЬОГО</div></div>
+            <div class="stat-card"><div class="stat-val" id="statMonth">0 ₴</div><div class="stat-label">МІСЯЦЬ</div></div>
+        </div>
+        <div class="card">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="number" id="rate" placeholder="грн/год" value="150">
+                <select id="lunch"><option value="0">Без обіду</option><option value="0.5" selected>30 хв</option><option value="1">1 год</option></select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="time" id="timeStart" value="09:00"><input type="time" id="timeEnd" value="18:00">
+            </div>
+            <button id="addBtn">Додати зміну</button>
+        </div>
+        <div class="card">
+            <div id="recordsList"></div>
+            <canvas id="chart" style="margin-top:20px;"></canvas>
+            <button onclick="openConfirm()" style="background:none; color:#8e8e93; font-size:11px; margin-top:15px; border:none;">Очистити всю історію</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function showNotify(text, icon = '🌸') {
+            const c = document.getElementById('notification-container');
+            document.getElementById('notify-text').innerText = text;
+            document.getElementById('notify-icon').innerText = icon;
+            c.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => c.style.transform = 'translateX(-50%) translateY(-150%)', 3000);
+        }
+
+        function setTheme(n) { localStorage.setItem('theme', n); document.documentElement.className = n; }
+        function toggleTheme() { const curr = localStorage.getItem('theme') === 'theme-dark' ? 'theme-light' : 'theme-dark'; setTheme(curr); }
+
+        const storedPass = localStorage.getItem('app_pass');
+        if (!storedPass) document.getElementById('loginTitle').innerText = "Створи пароль 📝";
+        if (localStorage.getItem('is_logged') === 'true' && storedPass) startApp(true);
+
+        document.getElementById('loginBtn').onclick = () => {
+            const v = document.getElementById('passwordInput').value;
+            if (!storedPass) {
+                if(v.length < 2) return showNotify("Надто короткий!", "❌");
+                localStorage.setItem('app_pass', v);
+                showNotify("Збережено!", "✅"); startApp();
+            } else if (v === storedPass) {
+                if(document.getElementById('rememberMe').checked) localStorage.setItem('is_logged', 'true');
+                startApp();
+            } else showNotify("Невірний пароль!", "❌");
+        };
+
+        function startApp(skip = false) {
+            if (skip) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('app').style.display = 'block'; initApp(); }
+            else {
+                document.getElementById('loginScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('loaderScreen').style.display = 'flex';
+                    setTimeout(() => {
+                        document.getElementById('loaderScreen').style.opacity = '0';
+                        setTimeout(() => { document.getElementById('loaderScreen').style.display = 'none'; document.getElementById('app').style.display = 'block'; initApp(); }, 500);
+                    }, 3500);
+                }, 400);
+            }
+        }
+
+        function initApp() {
+            const t = localStorage.getItem('theme') || 'theme-dark';
+            document.getElementById('themeSlider').checked = (t === 'theme-light');
+            loadData();
+        }
+
+        document.getElementById('addBtn').onclick = () => {
+            const r = parseFloat(document.getElementById('rate').value), s = document.getElementById('timeStart').value, e = document.getElementById('timeEnd').value, l = parseFloat(document.getElementById('lunch').value);
+            if(!r || !s || !e) return;
+            const now = new Date();
+            const record = { rate: r, start: s, end: e, lunch: l, date: now.toLocaleDateString('uk-UA'), month: now.getMonth(), year: now.getFullYear() };
+            let d = JSON.parse(localStorage.getItem('salary_data') || '[]');
+            d.push(record); localStorage.setItem('salary_data', JSON.stringify(d));
+            showNotify("Зміну додано!", "💰"); loadData();
+        };
+
+        function loadData() {
+            const d = JSON.parse(localStorage.getItem('salary_data') || '[]');
+            const list = document.getElementById('recordsList');
+            list.innerHTML = ''; let total = 0, mTotal = 0;
+            const cM = new Date().getMonth(), cY = new Date().getFullYear();
+            let cL = [], cV = [];
+            d.slice(-7).forEach(i => {
+                const s = i.start.split(':'), e = i.end.split(':');
+                let h = (parseInt(e[0]) + parseInt(e[1])/60) - (parseInt(s[0]) + parseInt(s[1])/60) - i.lunch;
+                if(h < 0) h += 24;
+                const sal = Math.round(h * i.rate);
+                total += sal; if(i.month === cM && i.year === cY) mTotal += sal;
+                cL.push(i.date.split('.')[0]); cV.push(sal);
+                list.insertAdjacentHTML('afterbegin', `<div class="record-item"><div><b>${i.date}</b><br><small>${h.toFixed(1)} год</small></div><div class="stat-val">+ ${sal} ₴</div></div>`);
+            });
+            document.getElementById('statTotal').innerText = total.toLocaleString() + " ₴";
+            document.getElementById('statMonth').innerText = mTotal.toLocaleString() + " ₴";
+            updateChart(cL, cV);
+        }
+
+        function updateChart(l, v) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            if(window.salaryChart) window.salaryChart.destroy();
+            window.salaryChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: l, datasets: [{ data: v, borderColor: '#ff2d55', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 45, 85, 0.1)', borderWidth: 3, pointRadius: 4 }] },
+                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#8e8e93'} } } }
+            });
+        }
+
+        function openConfirm() { document.getElementById('custom-confirm').style.display = 'flex'; }
+        function closeConfirm(isDelete) {
+            document.getElementById('custom-confirm').style.display = 'none';
+            if(isDelete) { localStorage.removeItem('salary_data'); loadData(); showNotify("Очищено", "🗑️"); }
+        }
+
+        // PWA Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error', err));
+            });
+        }
+    </script>
+</body>
+</html>

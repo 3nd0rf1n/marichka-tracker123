@@ -1,258 +1,363 @@
 <!DOCTYPE html>
-<html lang="uk" class="theme-dark">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
-    <title>Марічка SIM</title>
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#ff2d55">
-
-    <!-- Для iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Марічка SIM 6.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        .theme-light {
-            --color-primary: #ff2d55;
-            --color-secondary: #f2f2f7;
-            --color-card: #ffffff;
-            --font-color: #000000;
-            --input-bg: rgba(120, 120, 128, 0.12);
-            --notify-bg: rgba(255, 255, 255, 0.9);
-        }
-        .theme-dark {
-            --color-primary: #ff2d55;
-            --color-secondary: #000000;
-            --color-card: #1c1c1e;
-            --font-color: #ffffff;
-            --input-bg: #2c2c2e;
-            --notify-bg: rgba(44, 44, 46, 0.95);
+        :root {
+            --primary: #ff2d55;
+            --bg: #000000;
+            --card: #1c1c1e;
+            --input: #2c2c2e;
+            --text: #ffffff;
+            --text-sec: #a1a1aa;
+            --shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
-        :root { touch-action: manipulation; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; }
 
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--color-secondary);
-            color: var(--font-color);
-            transition: background-color 0.4s;
-            overflow: hidden;
+        /* --- ЛОАДЕР --- */
+        #loader {
+            position: fixed; inset: 0; background: var(--bg);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.6s ease;
         }
+        .heart { font-size: 60px; animation: pulse 1.5s infinite; filter: drop-shadow(0 0 10px var(--primary)); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-        /* NOTIFICATIONS */
-        #notification-container {
-            position: fixed; top: env(safe-area-inset-top, 20px); left: 50%;
-            transform: translateX(-50%) translateY(-150%); width: 90%;
-            max-width: 350px; z-index: 9999;
-            transition: transform 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.28);
-        }
-        .notify {
-            background: var(--notify-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            padding: 16px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.1);
-        }
+        /* --- ГОЛОВНИЙ ЕКРАН --- */
+        #app { display: none; height: 100vh; flex-direction: column; opacity: 0; transition: opacity 0.8s; }
+        .header { padding: 55px 20px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .burger-btn { font-size: 32px; cursor: pointer; color: var(--primary); transition: 0.3s; }
+        .burger-btn:active { transform: rotate(90deg); }
 
-        /* MODAL CONFIRM */
-        #custom-confirm {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: none;
-            align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px);
-        }
-        .confirm-box { background: var(--notify-bg); width: 270px; border-radius: 14px; text-align: center; overflow: hidden; }
-        .confirm-text { padding: 20px; font-weight: 600; font-size: 17px; }
-        .confirm-btns { display: flex; border-top: 1px solid rgba(120,120,128,0.2); }
-        .confirm-btns button { background: none; border: none; padding: 12px; flex: 1; font-size: 17px; color: var(--color-primary); }
+        .main-content { flex: 1; overflow-y: auto; padding: 10px 18px 120px; }
 
-        /* UI ELEMENTS */
-        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: inherit; padding: 20px; }
-        .glass-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 35px 25px; border-radius: 35px; width: 100%; max-width: 320px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .theme-light .glass-card { background: rgba(255, 255, 255, 0.8); border: none; }
+        /* --- КАРТКИ --- */
+        .card { background: var(--card); border-radius: 32px; padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.05); }
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-val { font-size: 28px; font-weight: 700; color: var(--primary); letter-spacing: -1px; }
+        .stat-label { font-size: 10px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 1.2px; margin-top: 5px; }
+
+        /* --- ТАБИ ТА ФОРМИ --- */
+        .type-tabs { display: flex; background: var(--input); padding: 5px; border-radius: 18px; margin-bottom: 25px; }
+        .tab { flex: 1; padding: 12px; text-align: center; border-radius: 14px; font-size: 13px; cursor: pointer; color: var(--text-sec); transition: 0.3s; }
+        .tab.active { background: var(--primary); color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 45, 85, 0.3); }
+
+        label { display: block; font-size: 11px; color: var(--text-sec); margin: 0 0 8px 6px; font-weight: 500; }
+        input, select { width: 100%; background: var(--input); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 16px; color: white; font-size: 16px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); background: #323235; }
+
+        .btn-add { width: 100%; background: var(--primary); color: white; border: none; border-radius: 20px; padding: 18px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .btn-add:active { transform: scale(0.96); }
+
+        /* --- МЕНЮ ТА КАЛЕНДАР --- */
+        #sidebar {
+            position: fixed; top: 0; right: -100%; width: 88%; height: 100%;
+            background: var(--card); z-index: 2000; transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 70px 25px; box-shadow: -15px 0 40px rgba(0,0,0,0.9);
+        }
+        #sidebar.open { right: 0; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 1500; backdrop-filter: blur(4px); }
+
+        .month-selector { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--input); padding: 10px; border-radius: 15px; }
+        .month-btn { background: none; color: var(--primary); border: none; font-size: 20px; cursor: pointer; padding: 0 15px; }
         
-        input, select, button { width: 100%; padding: 16px; margin: 10px 0; border: none; border-radius: 16px; background: var(--input-bg); font-size: 17px; color: var(--font-color); outline: none; }
-        button { background: var(--color-primary); color: white; font-weight: 600; }
-        
-        /* SWITCH */
-        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3c; transition: 0.4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background: white url('https://i.ibb.co/FxzBYR9/night.png') no-repeat center; background-size: 16px; transition: 0.4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2196f3; }
-        input:checked + .slider:before { transform: translateX(26px); background: white url('https://i.ibb.co/7JfqXxB/sunny.png') no-repeat center; background-size: 16px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .cal-day { padding: 12px 0; text-align: center; border-radius: 12px; background: var(--input); font-size: 13px; cursor: pointer; color: var(--text-sec); }
+        .cal-day.selected { background: var(--primary); color: white; font-weight: 700; }
 
-        #app { display: none; padding: calc(60px + env(safe-area-inset-top)) 20px 40px; height: 100vh; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .card { background: var(--color-card); border-radius: 25px; padding: 22px; margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: var(--color-card); padding: 15px; border-radius: 22px; }
-        .stat-val { font-size: 20px; font-weight: 800; color: var(--color-primary); }
-        .stat-label { font-size: 11px; color: #8e8e93; }
-        .record-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(120,120,128,0.2); }
+        /* --- ІСТОРІЯ --- */
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .history-info b { font-size: 15px; display: block; margin-bottom: 3px; }
+        .history-info span { font-size: 12px; color: var(--text-sec); }
+        .history-sum { font-weight: 700; color: var(--primary); font-size: 16px; }
 
-        #loaderScreen { display: none; z-index: 2000; background: #000; color: white; }
-        .heart { font-size: 60px; animation: beat 1s infinite; }
-        @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        #toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 45, 85, 0.95); color: white; padding: 14px 28px; border-radius: 50px;
+            font-size: 14px; display: none; z-index: 10000; box-shadow: 0 8px 20px rgba(255, 45, 85, 0.3);
+            backdrop-filter: blur(5px); font-weight: 500;
+        }
     </style>
 </head>
 <body>
 
-    <script>
-        (function() {
-            const t = localStorage.getItem('theme') || 'theme-dark';
-            document.documentElement.className = t;
-        })();
-    </script>
+<div id="loader">
+    <div class="heart">💖</div>
+    <p style="margin-top: 25px; letter-spacing: 3px; color: var(--text-sec); font-size: 12px;">ГОТУЄМО МАГІЮ...</p>
+</div>
 
-    <div id="notification-container"><div class="notify"><span id="notify-icon">🌸</span><span id="notify-text"></span></div></div>
+<div id="toast"></div>
+<div class="overlay" id="overlay"></div>
 
-    <div id="custom-confirm">
-        <div class="confirm-box">
-            <div class="confirm-text">Видалити історію?</div>
-            <div class="confirm-btns"><button onclick="closeConfirm(false)">Ні</button><button onclick="closeConfirm(true)">Так</button></div>
-        </div>
+<div id="sidebar">
+    <h2 style="margin-top:0; font-size: 24px;">Твій календар 🗓</h2>
+    <p style="color: var(--text-sec); font-size: 13px; margin-bottom: 25px;">Обери дату, щоб додати запис</p>
+    
+    <div class="month-selector">
+        <button class="month-btn" onclick="changeMonth(-1)">❮</button>
+        <span id="month-name" style="font-weight: 600; text-transform: capitalize;"></span>
+        <button class="month-btn" onclick="changeMonth(1)">❯</button>
     </div>
 
-    <div id="loginScreen" class="screen">
-        <div class="glass-card">
-            <h2 id="loginTitle">Привіт, Марічко! ❤️</h2>
-            <input type="password" id="passwordInput" placeholder="Введіть пароль">
-            <label style="font-size:14px;"><input type="checkbox" id="rememberMe"> Запам'ятати мене</label>
-            <button id="loginBtn">Увійти</button>
+    <div id="calendar" class="cal-grid"></div>
+    <p id="cur-date-text" style="color: var(--primary); font-size: 14px; font-weight: 600; text-align: center; margin-top: 20px;"></p>
+    
+    <div style="margin-top: 40px;">
+        <button class="btn-add" style="background:#2c2c2e; margin-bottom: 12px;" onclick="requestPush()">🔔 Нагадування</button>
+        <button class="btn-add" style="background:#3a3a3c; font-size: 14px; opacity: 0.6;" onclick="clearHistory()">Очистити все</button>
+    </div>
+</div>
+
+<div id="app">
+    <div class="header">
+        <div>
+            <div style="font-size: 13px; color: var(--text-sec); margin-bottom: 4px;">Привіт, сонечко!</div>
+            <div id="personal-greeting" style="font-size: 22px; font-weight: 700;">Ти сяєш сьогодні! ✨</div>
         </div>
+        <div class="burger-btn" onclick="toggleMenu()">☰</div>
     </div>
 
-    <div id="loaderScreen" class="screen"><div class="heart">❤️</div><div style="margin-top:20px; letter-spacing:2px; font-size:10px;">РАХУЄМО ПРИБУТОК...</div></div>
-
-    <div id="app">
-        <div class="header"><h1>Фінанси</h1><label class="switch"><input type="checkbox" id="themeSlider" onchange="toggleTheme()"><span class="slider"></span></label></div>
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-val" id="statTotal">0 ₴</div><div class="stat-label">ВСЬОГО</div></div>
-            <div class="stat-card"><div class="stat-val" id="statMonth">0 ₴</div><div class="stat-label">МІСЯЦЬ</div></div>
-        </div>
-        <div class="card">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="rate" placeholder="грн/год" value="150">
-                <select id="lunch"><option value="0">Без обіду</option><option value="0.5" selected>30 хв</option><option value="1">1 год</option></select>
+    <div class="main-content">
+        <div class="card stats-row">
+            <div>
+                <div id="total-val" class="stat-val">0 ₴</div>
+                <div class="stat-label">Твій капітал</div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="time" id="timeStart" value="09:00"><input type="time" id="timeEnd" value="18:00">
+            <div>
+                <div id="month-val" class="stat-val">0 ₴</div>
+                <div class="stat-label">Успіх за місяць</div>
             </div>
-            <button id="addBtn">Додати зміну</button>
         </div>
+
         <div class="card">
-            <div id="recordsList"></div>
-            <canvas id="chart" style="margin-top:20px;"></canvas>
-            <button onclick="openConfirm()" style="background:none; color:#8e8e93; font-size:11px; margin-top:15px; border:none;">Очистити всю історію</button>
+            <div class="type-tabs">
+                <div class="tab active" onclick="changeType('shift', this)">Зміна</div>
+                <div class="tab" onclick="changeType('sick', this)">Одужую</div>
+                <div class="tab" onclick="changeType('vacation', this)">Відпочиваю</div>
+            </div>
+
+            <div id="shift-fields">
+                <label>Твоя ставка (₴/год)</label>
+                <input type="number" id="rate" value="150" style="margin-bottom:20px">
+                <div class="input-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label>Початок</label>
+                        <input type="time" id="start-time" value="09:00">
+                    </div>
+                    <div>
+                        <label>Кінець</label>
+                        <input type="time" id="end-time" value="18:00">
+                    </div>
+                </div>
+                <label>Перерва на каву/обід</label>
+                <select id="lunch">
+                    <option value="0">Без перерви</option>
+                    <option value="0.5">30 хвилинок</option>
+                    <option value="1" selected>1 година</option>
+                </select>
+            </div>
+
+            <div id="fixed-fields" style="display: none;">
+                <label>Сума виплати (₴)</label>
+                <input type="number" id="fixed-sum" value="500">
+            </div>
+
+            <button class="btn-add" onclick="saveRecord()">Закарбувати успіх ✨</button>
+        </div>
+
+        <div class="card" style="padding-bottom: 10px;">
+            <h3 style="margin: 0 0 15px 0; font-size: 17px; font-weight: 600;">Історія твоїх досягнень</h3>
+            <div id="history-list"></div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        function showNotify(text, icon = '🌸') {
-            const c = document.getElementById('notification-container');
-            document.getElementById('notify-text').innerText = text;
-            document.getElementById('notify-icon').innerText = icon;
-            c.style.transform = 'translateX(-50%) translateY(0)';
-            setTimeout(() => c.style.transform = 'translateX(-50%) translateY(-150%)', 3000);
+<script>
+    let viewDate = new Date();
+    let selectedDate = new Date();
+    let currentType = 'shift';
+    let records = JSON.parse(localStorage.getItem('marichka_records_v6') || '[]');
+
+    const greetings = [
+        "Ти сяєш сьогодні! ✨",
+        "Марічка, ти найкраща! 💖",
+        "Сьогодні чудовий день! 🌸",
+        "Пишаюся тобою! ⭐",
+        "Робиш великі справи! 🚀"
+    ];
+
+    window.onload = () => {
+        // Рандомне привітання
+        document.getElementById('personal-greeting').innerText = greetings[Math.floor(Math.random() * greetings.length)];
+
+        setTimeout(() => {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('app').style.opacity = '1';
+            }, 600);
+        }, 1800);
+
+        renderCalendar();
+        updateStats();
+        initPushSystem();
+    };
+
+    function toggleMenu() {
+        const side = document.getElementById('sidebar');
+        const over = document.getElementById('overlay');
+        const isOpen = side.classList.contains('open');
+        side.classList.toggle('open');
+        over.style.display = isOpen ? 'none' : 'block';
+    }
+
+    document.getElementById('overlay').onclick = toggleMenu;
+
+    function changeMonth(dir) {
+        viewDate.setMonth(viewDate.getMonth() + dir);
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar');
+        grid.innerHTML = '';
+        const monthName = viewDate.toLocaleString('uk-UA', { month: 'long', year: 'numeric' });
+        document.getElementById('month-name').innerText = monthName;
+
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for(let i = 1; i <= daysInMonth; i++) {
+            const div = document.createElement('div');
+            const isSelected = i === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear();
+            div.className = 'cal-day ' + (isSelected ? 'selected' : '');
+            div.innerText = i;
+            div.onclick = () => {
+                selectedDate = new Date(year, month, i);
+                renderCalendar();
+                document.getElementById('cur-date-text').innerText = "Обрана дата: " + selectedDate.toLocaleDateString('uk-UA');
+                setTimeout(toggleMenu, 300);
+            };
+            grid.appendChild(div);
+        }
+        document.getElementById('cur-date-text').innerText = "Обрана дата: " + selectedDate.toLocaleDateString('uk-UA');
+    }
+
+    function changeType(type, el) {
+        currentType = type;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('shift-fields').style.display = type === 'shift' ? 'block' : 'none';
+        document.getElementById('fixed-fields').style.display = type === 'shift' ? 'none' : 'block';
+    }
+
+    function showToast(text) {
+        const toast = document.getElementById('toast');
+        toast.innerText = text;
+        toast.style.display = 'block';
+        if(navigator.vibrate) navigator.vibrate([40, 30, 40]);
+        setTimeout(() => toast.style.display = 'none', 3500);
+    }
+
+    function saveRecord() {
+        let sum = 0, info = "";
+
+        if(currentType === 'shift') {
+            const rate = parseFloat(document.getElementById('rate').value);
+            const start = document.getElementById('start-time').value.split(':');
+            const end = document.getElementById('end-time').value.split(':');
+            const lunch = parseFloat(document.getElementById('lunch').value);
+
+            let hours = (parseInt(end[0]) + end[1]/60) - (parseInt(start[0]) + start[1]/60) - lunch;
+            if(hours < 0) hours += 24; 
+            sum = Math.round(hours * rate);
+            info = `${hours.toFixed(1)} год. роботи`;
+        } else if(currentType === 'sick') {
+            sum = parseInt(document.getElementById('fixed-sum').value);
+            info = "Одужую (Лікарняний)";
+        } else {
+            sum = parseInt(document.getElementById('fixed-sum').value);
+            info = "Відпочиваю (Відпустка)";
         }
 
-        function setTheme(n) { localStorage.setItem('theme', n); document.documentElement.className = n; }
-        function toggleTheme() { const curr = localStorage.getItem('theme') === 'theme-dark' ? 'theme-light' : 'theme-dark'; setTheme(curr); }
-
-        const storedPass = localStorage.getItem('app_pass');
-        if (!storedPass) document.getElementById('loginTitle').innerText = "Створи пароль 📝";
-        if (localStorage.getItem('is_logged') === 'true' && storedPass) startApp(true);
-
-        document.getElementById('loginBtn').onclick = () => {
-            const v = document.getElementById('passwordInput').value;
-            if (!storedPass) {
-                if(v.length < 2) return showNotify("Надто короткий!", "❌");
-                localStorage.setItem('app_pass', v);
-                showNotify("Збережено!", "✅"); startApp();
-            } else if (v === storedPass) {
-                if(document.getElementById('rememberMe').checked) localStorage.setItem('is_logged', 'true');
-                startApp();
-            } else showNotify("Невірний пароль!", "❌");
+        const record = {
+            id: Date.now(),
+            date: selectedDate.toLocaleDateString('uk-UA'),
+            month: selectedDate.getMonth(),
+            year: selectedDate.getFullYear(),
+            sum: sum, info: info
         };
 
-        function startApp(skip = false) {
-            if (skip) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('app').style.display = 'block'; initApp(); }
-            else {
-                document.getElementById('loginScreen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('loaderScreen').style.display = 'flex';
-                    setTimeout(() => {
-                        document.getElementById('loaderScreen').style.opacity = '0';
-                        setTimeout(() => { document.getElementById('loaderScreen').style.display = 'none'; document.getElementById('app').style.display = 'block'; initApp(); }, 500);
-                    }, 3500);
-                }, 400);
-            }
-        }
+        records.unshift(record);
+        localStorage.setItem('marichka_records_v6', JSON.stringify(records));
+        updateStats();
+        showToast("Успішно додано: " + sum + " ₴ 💖");
+    }
 
-        function initApp() {
-            const t = localStorage.getItem('theme') || 'theme-dark';
-            document.getElementById('themeSlider').checked = (t === 'theme-light');
-            loadData();
-        }
+    function updateStats() {
+        const list = document.getElementById('history-list');
+        list.innerHTML = '';
+        let total = 0, monthTotal = 0;
+        const now = new Date();
 
-        document.getElementById('addBtn').onclick = () => {
-            const r = parseFloat(document.getElementById('rate').value), s = document.getElementById('timeStart').value, e = document.getElementById('timeEnd').value, l = parseFloat(document.getElementById('lunch').value);
-            if(!r || !s || !e) return;
+        records.forEach(r => {
+            total += r.sum;
+            if(r.month === now.getMonth() && r.year === now.getFullYear()) monthTotal += r.sum;
+            list.innerHTML += `
+                <div class="history-item">
+                    <div class="history-info">
+                        <b>${r.date}</b>
+                        <span>${r.info}</span>
+                    </div>
+                    <div class="history-sum">${r.sum} ₴</div>
+                </div>
+            `;
+        });
+
+        document.getElementById('total-val').innerText = total + " ₴";
+        document.getElementById('month-val').innerText = monthTotal + " ₴";
+    }
+
+    function requestPush() {
+        Notification.requestPermission().then(p => { 
+            if(p === 'granted') showToast("Нагадування активовано! Чекай о 20:00 🔔"); 
+            else showToast("Ой, сповіщення заблоковано 😔");
+        });
+    }
+
+    function initPushSystem() {
+        setInterval(() => {
             const now = new Date();
-            const record = { rate: r, start: s, end: e, lunch: l, date: now.toLocaleDateString('uk-UA'), month: now.getMonth(), year: now.getFullYear() };
-            let d = JSON.parse(localStorage.getItem('salary_data') || '[]');
-            d.push(record); localStorage.setItem('salary_data', JSON.stringify(d));
-            showNotify("Зміну додано!", "💰"); loadData();
-        };
+            // Перевірка о 20:00
+            if(now.getHours() === 20 && now.getMinutes() === 0) {
+                if(Notification.permission === 'granted') {
+                    new Notification("Марічка ❤️", {
+                        body: "Сонечко, не забудь закарбувати сьогоднішній успіх у додатку! 💰",
+                        icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    });
+                }
+            }
+        }, 60000);
+    }
 
-        function loadData() {
-            const d = JSON.parse(localStorage.getItem('salary_data') || '[]');
-            const list = document.getElementById('recordsList');
-            list.innerHTML = ''; let total = 0, mTotal = 0;
-            const cM = new Date().getMonth(), cY = new Date().getFullYear();
-            let cL = [], cV = [];
-            d.slice(-7).forEach(i => {
-                const s = i.start.split(':'), e = i.end.split(':');
-                let h = (parseInt(e[0]) + parseInt(e[1])/60) - (parseInt(s[0]) + parseInt(s[1])/60) - i.lunch;
-                if(h < 0) h += 24;
-                const sal = Math.round(h * i.rate);
-                total += sal; if(i.month === cM && i.year === cY) mTotal += sal;
-                cL.push(i.date.split('.')[0]); cV.push(sal);
-                list.insertAdjacentHTML('afterbegin', `<div class="record-item"><div><b>${i.date}</b><br><small>${h.toFixed(1)} год</small></div><div class="stat-val">+ ${sal} ₴</div></div>`);
-            });
-            document.getElementById('statTotal').innerText = total.toLocaleString() + " ₴";
-            document.getElementById('statMonth').innerText = mTotal.toLocaleString() + " ₴";
-            updateChart(cL, cV);
+    function clearHistory() {
+        if(confirm("Марічка, ти впевнена, що хочеш видалити всю історію?")) {
+            records = [];
+            localStorage.removeItem('marichka_records_v6');
+            updateStats();
+            toggleMenu();
+            showToast("Все чисто! Починаємо з нового листа ✨");
         }
+    }
+</script>
 
-        function updateChart(l, v) {
-            const ctx = document.getElementById('chart').getContext('2d');
-            if(window.salaryChart) window.salaryChart.destroy();
-            window.salaryChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: l, datasets: [{ data: v, borderColor: '#ff2d55', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 45, 85, 0.1)', borderWidth: 3, pointRadius: 4 }] },
-                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#8e8e93'} } } }
-            });
-        }
-
-        function openConfirm() { document.getElementById('custom-confirm').style.display = 'flex'; }
-        function closeConfirm(isDelete) {
-            document.getElementById('custom-confirm').style.display = 'none';
-            if(isDelete) { localStorage.removeItem('salary_data'); loadData(); showNotify("Очищено", "🗑️"); }
-        }
-
-        // PWA Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error', err));
-            });
-        }
-    </script>
 </body>
 </html>
